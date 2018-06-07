@@ -16,8 +16,12 @@ convnet/
 decaf/
 submission/
 cfg/
-darknet
+weights/
 .fuse*
+
+anblick
+libdarknet.a
+libdarknet.so
 
 # OS Generated #
 .DS_Store*

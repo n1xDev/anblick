@@ -236,7 +236,144 @@ image **load_alphabet()
     return alphabets;
 }
 
+/* __ANBLICK__ */
+
+void reverse(char s[])
+{
+    int i, j;
+    char c;
+
+    for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+        c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+    }
+}
+
+void itoa(int n, char s[])
+{
+    int i, sign;
+    if ((sign = n) < 0)  /* записываем знак */
+        n = -n;          /* делаем n положительным числом */
+    i = 0;
+    do {       /* генерируем цифры в обратном порядке */
+        s[i++] = n % 10 + '0';   /* берем следующую цифру */
+    } while ((n /= 10) > 0);     /* удаляем */
+    if (sign < 0)
+        s[i++] = '-';
+    s[i] = '\0';
+    reverse(s);
+}
+
 void draw_detections(image im, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
+{
+    int a[] = { 2, 5, 6, 7 };
+    int a_length = sizeof(a) / sizeof(a[0]);
+
+    int count = 0;
+    int max = 35;
+
+    int i,j;
+
+    for(i = 0; i < num; ++i) {
+        char labelstr[4096] = {0};
+        int class = -1;
+        for(j = 0; j < classes; ++j){
+            if (dets[i].prob[j] > thresh){
+                if (class < 0) {
+                    strcat(labelstr, names[j]);
+                    class = j;
+                } else {
+                    strcat(labelstr, ", ");
+                    strcat(labelstr, names[j]);
+                }
+                printf("%s: %.0f%%\n", names[j], dets[i].prob[j]*100);
+            }
+        }
+        if(class >= 0){
+            printf("^ CLASS: %i \n", class);
+            
+            int approach = 0;
+            for (int k = 0; k < a_length; k++) {
+                if (class == a[k]) {
+                    count++;
+                    approach = 1;
+                    break;
+                }
+            }
+
+            if (approach) {
+                int width = im.h * .006;
+
+                /*
+                   if(0){
+                   width = pow(prob, 1./2.)*10+1;
+                   alphabet = 0;
+                   }
+                 */
+
+                //printf("%d %s: %.0f%%\n", i, names[class], prob*100);
+                int offset = class*123457 % classes;
+                float red = get_color(2,offset,classes);
+                float green = get_color(1,offset,classes);
+                float blue = get_color(0,offset,classes);
+                float rgb[3];
+
+                //width = prob*20+2;
+
+                rgb[0] = red;
+                rgb[1] = green;
+                rgb[2] = blue;
+                box b = dets[i].bbox;
+                //printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
+
+                int left  = (b.x-b.w/2.)*im.w;
+                int right = (b.x+b.w/2.)*im.w;
+                int top   = (b.y-b.h/2.)*im.h;
+                int bot   = (b.y+b.h/2.)*im.h;
+
+                if(left < 0) left = 0;
+                if(right > im.w-1) right = im.w-1;
+                if(top < 0) top = 0;
+                if(bot > im.h-1) bot = im.h-1;
+
+                draw_box_width(im, left, top, right, bot, width, red, green, blue);
+                if (alphabet) {
+                    image label = get_label(alphabet, labelstr, (im.h*.03));
+                    draw_label(im, top + width, left, label, rgb);
+                    free_image(label);
+                }
+                if (dets[i].mask){
+                    image mask = float_to_image(14, 14, 1, dets[i].mask);
+                    image resized_mask = resize_image(mask, b.w*im.w, b.h*im.h);
+                    image tmask = threshold_image(resized_mask, .5);
+                    embed_image(tmask, im, left, top);
+                    free_image(mask);
+                    free_image(resized_mask);
+                    free_image(tmask);
+                }
+            }
+        }
+    }
+    float rgb[3] = { 1.0f, 1.0f, 1.0f };
+
+    char str[10]; 
+    itoa(count, str);
+    image label = get_label(alphabet, str, (im.h * 0.03) / 5);
+    draw_label(im, 0, 0, label, rgb);
+
+    char str2[10]; 
+    itoa((int)((float)count * 100.0f / (float)max), str2);
+    char third[11];
+    snprintf(third, sizeof(third), "%s%c", str2, '%');
+    image label2 = get_label(alphabet, third , (im.h * 0.03) / 5);
+    draw_label(im, 50 + 60, 0, label2, rgb);
+
+    // image label2 = get_label(alphabet, third, (im.h * .03) / 5);
+    // draw_label(im, 0, 50 + 60, label2, rgb);
+}
+
+void draw_detectionsORIG(image im, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
 {
     int i,j;
 

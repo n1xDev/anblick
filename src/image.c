@@ -313,10 +313,13 @@ void draw_detections(image im, detection *dets, int num, float thresh, char **na
                  */
 
                 //printf("%d %s: %.0f%%\n", i, names[class], prob*100);
-                int offset = class*123457 % classes;
-                float red = get_color(2,offset,classes);
-                float green = get_color(1,offset,classes);
-                float blue = get_color(0,offset,classes);
+                // int offset = class*123457 % classes;
+                // float red = get_color(2,offset,classes);
+                // float green = get_color(1,offset,classes);
+                // float blue = get_color(0,offset,classes);
+                float red = 0.85f;
+                float green = 0.85f;
+                float blue = 0.85f;
                 float rgb[3];
 
                 //width = prob*20+2;
